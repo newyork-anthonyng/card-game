@@ -3,3 +3,8 @@
 @import "tailwindcss/components";
 
 @import "tailwindcss/utilities";
+
+.rectangle-selection {
+  position: absolute;
+  border: 1px dashed black;
+}
