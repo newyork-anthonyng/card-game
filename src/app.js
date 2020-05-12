@@ -1,64 +1,21 @@
 import "./styles.css";
-import { createMachine, assign, interpret } from "xstate";
+import generateMachine from "./machine";
+import { interpret } from "xstate";
 
-const machine = createMachine(
-  {
-    id: "rectangle-selection",
-    context: {
-      originalX: 0,
-      originalY: 0,
-      newX: 0,
-      newY: 0,
-    },
-    initial: "idle",
-    states: {
-      idle: {
-        on: {
-          mousedown: {
-            target: "dragging",
-            actions: "cacheInitialMouseCoordinates",
-          },
-        },
-      },
-      dragging: {
-        exit: "clearMouseCoordinates",
-        on: {
-          mousemove: {
-            actions: "cacheMouseCoordinates",
-          },
-          mouseup: {
-            target: "idle",
-          },
-        },
-      },
-    },
+const machine = generateMachine({
+  onMouseUp: (context) => {
+    const $rectangleSelection = getRectangleSelection();
+    $rectangleSelection.hidden = 1;
+
+    const $cards = getCardsInSelection(context);
+    console.log($cards);
   },
-  {
-    actions: {
-      cacheInitialMouseCoordinates: assign((_, event) => {
-        return {
-          originalX: event.clientX,
-          originalY: event.clientY,
-        };
-      }),
-      cacheMouseCoordinates: assign((_, event) => {
-        return {
-          newX: event.clientX,
-          newY: event.clientY,
-        };
-      }),
-      clearMouseCoordinates: assign(() => {
-        return {
-          originalX: 0,
-          originalY: 0,
-          newX: 0,
-          newY: 0
-        }
-      })
-    },
-  }
-);
-
+  onMouseDown: () => {
+    const $rectangleSelection = getRectangleSelection();
+    $rectangleSelection.hidden = 0;
+  },
+  cards: getAllCards()
+})
 const service = interpret(machine).onTransition(state => {
   if (state.changed) {
     renderDebug(state);
@@ -68,17 +25,12 @@ const service = interpret(machine).onTransition(state => {
 service.start();
 
 document.addEventListener("mousedown", function(e) {
-  const $rectangleSelection = getRectangleSelection();
-  $rectangleSelection.hidden = 0;
-  console.log("document.body#mousedown")
   service.send(e);
 });
 document.addEventListener("mousemove", function(e) {
   service.send(e);
 });
 document.addEventListener("mouseup", function(e) {
-  const $rectangleSelection = getRectangleSelection();
-  $rectangleSelection.hidden = 1;
   service.send(e);
 });
 
@@ -109,11 +61,61 @@ function getRectangleSelection() {
   }
 }
 
-
 function renderDebug(state) {
   if (!window._debug) {
     window._debug = document.querySelector(".js-debug");
   }
 
   window._debug.innerHTML = `<pre>${JSON.stringify(state, null, 2)}</pre>`;
+}
+
+function getCardsInSelection(context) {
+  const $allCards = getAllCards();
+
+  const rectangle = {
+    left: Math.min(context.originalX, context.newX),
+    right: Math.max(context.originalX, context.newX),
+    top: Math.min(context.originalY, context.newY),
+    bottom: Math.max(context.originalY, context.newY)
+  }
+  console.group('getCardsInSelection');
+  console.log(context);
+  console.log(rectangle);
+  console.groupEnd('getCardsInSelection');
+
+  const selectedCards = [];
+  for (let i = 0; i < $allCards.length; i++) {
+    if (isCardInSelection($allCards[i], rectangle)) {
+      selectedCards.push($allCards[i]);
+    }
+  }
+
+  return selectedCards;
+}
+
+function getAllCards() {
+  if (window._cards) {
+    return window._cards;
+  } else {
+    window._cards = document.querySelectorAll('.js-card');
+    return window._cards;
+  }
+}
+
+function isCardInSelection($ele, rectangle) {
+  const clientRect = $ele.getBoundingClientRect();
+  const $eleRectangle = {
+    left: clientRect.left,
+    right: clientRect.right,
+    top: clientRect.top,
+    bottom: clientRect.bottom
+  };
+
+  console.log($eleRectangle);
+  console.log(rectangle);
+
+  const isXIntersecting = ($eleRectangle.left < rectangle.right && $eleRectangle.left > rectangle.left) || ($eleRectangle.right < rectangle.right && $eleRectangle.right > rectangle.left);
+  const isYIntersecting = ($eleRectangle.top > rectangle.top && $eleRectangle.top < rectangle.bottom) || ($eleRectangle.bottom > rectangle.top && $eleRectangle.bottom < rectangle.bottom);
+
+  return isXIntersecting && isYIntersecting;
 }
