@@ -1,7 +1,7 @@
 import { createMachine, assign, spawn } from "xstate";
 import cardMachine from "./cardMachine";
 
-const machine = ({ cards, onMouseDown, onMouseUp }) => createMachine(
+const machine = ({ cards, onMouseDown, onMouseUp, areCardsSelected, selectCards, unselectCards }) => createMachine(
   {
     id: "rectangle-selection",
     context: {
@@ -20,12 +20,14 @@ const machine = ({ cards, onMouseDown, onMouseUp }) => createMachine(
         }
       },
       idle: {
+        entry: "unselectCards",
         on: {
           mousedown: {
             target: "dragging",
             actions: [
               "clearMouseCoordinates",
               "cacheInitialMouseCoordinates",
+              "unselectCards",
               "onMouseDown"
             ],
           },
@@ -36,19 +38,38 @@ const machine = ({ cards, onMouseDown, onMouseUp }) => createMachine(
           mousemove: {
             actions: ["cacheMouseCoordinates"],
           },
-          mouseup: {
-            actions: ["onMouseUp"],
-            target: "idle",
-          },
+          mouseup: [
+            {
+              cond: "areCardsSelected",
+              target: "selected"
+            },
+            "idling"
+          ]
         },
       },
+      idling: {
+        entry: ["onMouseUp"],
+        on: {
+          "": "idle"
+        }
+      },
+      selected: {
+        entry: ["onMouseUp", "selectCards"],
+        on: {
+          mousedown: {
+            target: "idle",
+            actions: "onMouseUp"
+          }
+        }
+      }
     },
   },
   {
+    guards: {
+      areCardsSelected: areCardsSelected
+    },
     actions: {
       initializeCards: assign((context) => {
-        console.log("initializeCards");
-        console.log(context);
         context.cards.forEach(card => {
           card._ref = spawn(cardMachine);
         })
@@ -78,6 +99,8 @@ const machine = ({ cards, onMouseDown, onMouseUp }) => createMachine(
           newY: 0
         }
       }),
+      selectCards: selectCards,
+      unselectCards: unselectCards,
       onMouseDown: (context) => {
         onMouseDown && onMouseDown(context);
       },

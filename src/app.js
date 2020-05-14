@@ -3,24 +3,34 @@ import generateMachine from "./machine";
 import { interpret } from "xstate";
 
 const machine = generateMachine({
-  onMouseUp: (context) => {
+  onMouseUp: () => {
     const $rectangleSelection = getRectangleSelection();
     $rectangleSelection.hidden = 1;
-
-    const $cards = getCardsInSelection(context);
-    $cards.forEach($card => {
-      $card._ref.send("SELECT");
-    })
   },
-  onMouseDown: (context) => {
+  onMouseDown: () => {
     const $rectangleSelection = getRectangleSelection();
     $rectangleSelection.hidden = 0;
 
+    // context.cards.forEach($card => {
+    //   $card._ref.send("UNSELECT");
+    // })
+  },
+  areCardsSelected: (context) => {
+    return getCardsInSelection(context).length > 0;
+  },
+  cards: getAllCards(),
+  selectCards: (context) => {
+    const $selectedCards = getCardsInSelection(context);
+    $selectedCards.forEach($card => {
+      $card._ref.send("SELECT");
+    })
+  },
+  unselectCards: (context) => {
     context.cards.forEach($card => {
       $card._ref.send("UNSELECT");
     })
-  },
-  cards: getAllCards()
+  }
+
 })
 const service = interpret(machine).onTransition(state => {
   if (state.changed) {
@@ -32,12 +42,8 @@ service.start();
 
 service.state.context.cards.forEach(card => {
   card._ref.onTransition(state => {
-    console.group("Card changed");
-    console.log(state);
-    console.groupEnd("Card changed");
     if (state.changed) {
       const states = state.toStrings();
-      console.log(states);
       if (states.includes("selected")) {
         card.style.backgroundColor = "green";
       } else {
@@ -46,11 +52,6 @@ service.state.context.cards.forEach(card => {
     }
   });
 });
-console.group('service');
-
-console.log(service)
-console.log('machine', machine);
-console.groupEnd('service');
 
 document.addEventListener("mousedown", function(e) {
   service.send(e);
@@ -61,6 +62,12 @@ document.addEventListener("mousemove", function(e) {
 document.addEventListener("mouseup", function(e) {
   service.send(e);
 });
+
+// $cards = getAllCards();
+// $cards.forEach($card => {
+//   $card.addEventListener("mousedown", function() {
+//   });
+// });
 
 
 // http://jsfiddle.net/jLqHv/
@@ -94,12 +101,12 @@ function renderDebug(state) {
     window._debug = document.querySelector(".js-debug");
   }
 
-  window._debug.innerHTML = `<pre>${JSON.stringify(state, null, 2)}</pre>`;
+  console.log(state.value);
+  window._debug.innerHTML = `<pre>${JSON.stringify(state.value, null, 2)}</pre>`;
 }
 
 function getCardsInSelection(context) {
   const $allCards = getAllCards();
-  console.log("$allCards", $allCards);
 
   const rectangle = {
     left: Math.min(context.originalX, context.newX),
