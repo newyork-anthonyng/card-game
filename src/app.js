@@ -10,10 +10,6 @@ const machine = generateMachine({
   onMouseDown: () => {
     const $rectangleSelection = getRectangleSelection();
     $rectangleSelection.hidden = 0;
-
-    // context.cards.forEach($card => {
-    //   $card._ref.send("UNSELECT");
-    // })
   },
   areCardsSelected: (context) => {
     return getCardsInSelection(context).length > 0;
@@ -45,9 +41,9 @@ service.state.context.cards.forEach(card => {
     if (state.changed) {
       const states = state.toStrings();
       if (states.includes("selected")) {
-        card.style.backgroundColor = "green";
+        card.dataset.selected = true;
       } else {
-        card.style.backgroundColor = "red";
+        card.dataset.selected = false;
       }
     }
   });
@@ -62,13 +58,6 @@ document.addEventListener("mousemove", function(e) {
 document.addEventListener("mouseup", function(e) {
   service.send(e);
 });
-
-// $cards = getAllCards();
-// $cards.forEach($card => {
-//   $card.addEventListener("mousedown", function() {
-//   });
-// });
-
 
 // http://jsfiddle.net/jLqHv/
 // Rectangle Selection inspired by JSFiddle

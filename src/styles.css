@@ -17,6 +17,14 @@
   background-color: aquamarine;
 }
 
+[data-selected="true"] {
+  background-color: aquamarine;
+}
+
+[data-selected="false"] {
+  background-color: tomato;
+}
+
 .right-card {
   left: 500px;
   top: 275px;

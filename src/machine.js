@@ -57,8 +57,12 @@ const machine = ({ cards, onMouseDown, onMouseUp, areCardsSelected, selectCards,
         entry: ["onMouseUp", "selectCards"],
         on: {
           mousedown: {
-            target: "idle",
-            actions: "onMouseUp"
+            actions: [
+              "cacheInitialMouseCoordinates",
+              "unselectCards",
+              "onMouseDown"
+            ],
+            target: "dragging",
           }
         }
       }
