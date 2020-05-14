@@ -8,7 +8,12 @@ const machine = generateMachine({
     $rectangleSelection.hidden = 1;
 
     const $cards = getCardsInSelection(context);
+    console.group("Selected cards")
     console.log($cards);
+    console.groupEnd("Selected cards")
+    $cards.forEach($card => {
+      $card._ref.send("SELECTED");
+    })
   },
   onMouseDown: () => {
     const $rectangleSelection = getRectangleSelection();
@@ -23,6 +28,28 @@ const service = interpret(machine).onTransition(state => {
   }
 });
 service.start();
+
+service.state.context.cards.forEach(card => {
+  card._ref.onTransition(state => {
+    console.group("Card changed");
+    console.log(state);
+    console.groupEnd("Card changed");
+    if (state.changed) {
+      const states = state.toStrings();
+      console.log(states);
+      if (states.includes("selected")) {
+        card.style.backgroundColor = "green";
+      } else {
+        card.style.backgroundColor = "red";
+      }
+    }
+  });
+});
+console.group('service');
+
+console.log(service)
+console.log('machine', machine);
+console.groupEnd('service');
 
 document.addEventListener("mousedown", function(e) {
   service.send(e);
@@ -71,6 +98,7 @@ function renderDebug(state) {
 
 function getCardsInSelection(context) {
   const $allCards = getAllCards();
+  console.log("$allCards", $allCards);
 
   const rectangle = {
     left: Math.min(context.originalX, context.newX),
@@ -78,10 +106,6 @@ function getCardsInSelection(context) {
     top: Math.min(context.originalY, context.newY),
     bottom: Math.max(context.originalY, context.newY)
   }
-  console.group('getCardsInSelection');
-  console.log(context);
-  console.log(rectangle);
-  console.groupEnd('getCardsInSelection');
 
   const selectedCards = [];
   for (let i = 0; i < $allCards.length; i++) {
@@ -111,11 +135,10 @@ function isCardInSelection($ele, rectangle) {
     bottom: clientRect.bottom
   };
 
-  console.log($eleRectangle);
-  console.log(rectangle);
+  const isLeftValid = $eleRectangle.left < rectangle.right;
+  const isRightValid = $eleRectangle.right > rectangle.left;
+  const isTopValid = $eleRectangle.top < rectangle.bottom;
+  const isBottomValid = $eleRectangle.bottom > rectangle.top;
 
-  const isXIntersecting = ($eleRectangle.left < rectangle.right && $eleRectangle.left > rectangle.left) || ($eleRectangle.right < rectangle.right && $eleRectangle.right > rectangle.left);
-  const isYIntersecting = ($eleRectangle.top > rectangle.top && $eleRectangle.top < rectangle.bottom) || ($eleRectangle.bottom > rectangle.top && $eleRectangle.bottom < rectangle.bottom);
-
-  return isXIntersecting && isYIntersecting;
+  return isLeftValid && isRightValid && isTopValid && isBottomValid;
 }

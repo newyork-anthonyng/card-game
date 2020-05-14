@@ -1,4 +1,5 @@
-import { createMachine, assign } from "xstate";
+import { createMachine, assign, spawn } from "xstate";
+import cardMachine from "./cardMachine";
 
 const machine = ({ cards, onMouseDown, onMouseUp }) => createMachine(
   {
@@ -10,8 +11,14 @@ const machine = ({ cards, onMouseDown, onMouseUp }) => createMachine(
       newY: 0,
       cards: cards || []
     },
-    initial: "idle",
+    initial: "loading",
     states: {
+      loading: {
+        entry: "initializeCards",
+        on: {
+          "": "idle"
+        }
+      },
       idle: {
         on: {
           mousedown: {
@@ -35,6 +42,16 @@ const machine = ({ cards, onMouseDown, onMouseUp }) => createMachine(
   },
   {
     actions: {
+      initializeCards: assign((context) => {
+        console.log("initializeCards");
+        console.log(context);
+        context.cards.forEach(card => {
+          card._ref = spawn(cardMachine);
+        })
+        return {
+          cards: context.cards
+        }
+      }),
       cacheInitialMouseCoordinates: assign((_, event) => {
         return {
           originalX: event.clientX,

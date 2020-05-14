@@ -10,8 +10,14 @@
 }
 
 .card {
+  position: absolute;
   height: 200px;
   width: 100px;
   border: 1px solid black;
   background-color: aquamarine;
+}
+
+.right-card {
+  left: 500px;
+  top: 275px;
 }
