@@ -10,10 +10,14 @@ const machine = createMachine({
   states: {
     idle: {
       on: {
-        SELECTED: "selected"
+        SELECT: "selected"
       }
     },
-    selected: {}
+    selected: {
+      on: {
+        UNSELECT: "idle"
+      }
+    }
   }
 });
 

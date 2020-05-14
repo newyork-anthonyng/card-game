@@ -23,7 +23,11 @@ const machine = ({ cards, onMouseDown, onMouseUp }) => createMachine(
         on: {
           mousedown: {
             target: "dragging",
-            actions: ["clearMouseCoordinates", "cacheInitialMouseCoordinates", "onMouseDown"],
+            actions: [
+              "clearMouseCoordinates",
+              "cacheInitialMouseCoordinates",
+              "onMouseDown"
+            ],
           },
         },
       },

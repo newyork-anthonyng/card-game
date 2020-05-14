@@ -8,16 +8,17 @@ const machine = generateMachine({
     $rectangleSelection.hidden = 1;
 
     const $cards = getCardsInSelection(context);
-    console.group("Selected cards")
-    console.log($cards);
-    console.groupEnd("Selected cards")
     $cards.forEach($card => {
-      $card._ref.send("SELECTED");
+      $card._ref.send("SELECT");
     })
   },
-  onMouseDown: () => {
+  onMouseDown: (context) => {
     const $rectangleSelection = getRectangleSelection();
     $rectangleSelection.hidden = 0;
+
+    context.cards.forEach($card => {
+      $card._ref.send("UNSELECT");
+    })
   },
   cards: getAllCards()
 })
